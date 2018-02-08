@@ -1,6 +1,6 @@
 (ns clj-jenkins.core-test
-  (:require [clojure.test :refer :all]
-            [clj-jenkins.core :refer :all]))
+  (:require [clj-jenkins.rest-client :refer :all]
+            [clojure.test :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
