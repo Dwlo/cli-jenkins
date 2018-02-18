@@ -2,7 +2,8 @@
   (:require [cheshire.core          :as cc]
             [clj-http.client        :as rest-client]
             [clj-jenkins.properties :as pp]
-            [clojure.walk           :as wlk]))
+            [clojure.walk           :as wlk]
+            [clojure.string         :as str]))
 
 (def auth-type "?os_authType=basic")
 
@@ -15,9 +16,12 @@
 (defn rest-get
   "GET request on the Jira REST api."
   [uri]
-  (let [resp (rest-client/get (str pp/server-url uri)
-                              {:basic-auth [pp/user-name pp/user-passwd]
-                               :accept :json})
+  (let [address (if (str/starts-with? uri "http")
+                  uri
+                  (str pp/server-url uri))
+        resp    (rest-client/get address
+                                 {:basic-auth [pp/user-name pp/user-passwd]
+                                  :accept :json})
         status (:status resp)]
     (if (= 200 status)
       (get-body resp)
