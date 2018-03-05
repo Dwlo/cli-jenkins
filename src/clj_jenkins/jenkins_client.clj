@@ -28,7 +28,7 @@
   (->> (list-queued-items)
        (map #(tsk/parse %))))
 
-(defn long-time-waiting-tasks
+(defn list-waiting-tasks-since
   [mins]
   (->> (list-queued-tasks)
        (filter #(tcore/before? (:since %) (-> mins tcore/minutes tcore/ago)))))
@@ -44,7 +44,7 @@
                       :name  (:name prj)
                       :url   (str (:url prj) "api/json")}))))
 
-(defn running-projects
+(defn list-running-projects
   "List all running projects"
   []
   (->> (list-projects)
@@ -57,17 +57,29 @@
   (->> (rest/rest-get url)
        (job/parse)))
 
-(defn disabled-projects
+(defn list-disabled-projects
   "Returns all disabled projects"
   []
   (->> (list-projects)
-       (map #(:url %))
-       (map #(get-project %))
+       (pmap #(get-project (:url %)))
        (filter #(not (:buildable %)))))
+
+(declare get-build)
+(defn list-projects-not-run-since-days
+  "Return the urls of projects not run since a given day"
+  [days]
+  (->> (list-projects)
+       (pmap #(let [prj (get-project (:url %))]
+                (->> (str (:url prj) (:last-build prj) "/api/json")
+                     (get-build))))
+       (filter #(tcore/before? (:started-at %) (-> days tcore/days tcore/ago)))
+       (map #(clojure.string/replace (:url %)
+                                     #"/[0-9]*/api/json$"
+                                     "/api/json"))))
 
 ;; Build related functions
 
-(defn running-builds-url
+(defn list-running-builds
   "Returns a url link for all running builds"
   []
   (->> (rest/rest-get "computer/api/json?tree=computer[executors[currentExecutable[url]],oneOffExecutors[currentExecutable[url]]]")
@@ -85,8 +97,8 @@
    (->> (rest/rest-get (str "job/" project-name "/" number  "/api/json"))
         build/parse)))
 
-(defn builds-running-more-then
+(defn list-builds-running-more-then
   [mins]
-  (->> (running-builds-url)
-       (map #(get-build %))
+  (->> (list-running-builds)
+       (pmap #(get-build %))
        (filter #(tcore/before? (:started-at %) (-> mins tcore/minutes tcore/ago)))))
