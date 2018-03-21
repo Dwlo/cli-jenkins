@@ -33,6 +33,11 @@
   (->> (list-queued-tasks)
        (filter #(tcore/before? (:since %) (-> mins tcore/minutes tcore/ago)))))
 
+(defn delete-builds
+  [project build-numbers]
+  (->> build-numbers
+       (pmap #(rest/rest-post (str "job/" project "/" % "/doDelete")))))
+
 ;; Project related functions
 
 (defn list-projects

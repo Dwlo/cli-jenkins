@@ -14,7 +14,7 @@
        wlk/keywordize-keys))
 
 (defn rest-get
-  "GET request on the Jira REST api."
+  "GET request on the Jenkins REST api."
   [uri]
   (let [address (if (str/starts-with? uri "http")
                   uri
@@ -26,3 +26,17 @@
     (if (= 200 status)
       (get-body resp)
       (throw (Exception. resp)))))
+
+(defn rest-post
+  "Post request on the Jenkins REST resource"
+  [uri]
+  (let [address (if (str/starts-with? uri "http")
+                  uri
+                  (str pp/server-url uri))
+        resp    (rest-client/post address
+                                  {:basic-auth [pp/user-name pp/user-passwd]
+                                   :accept :json})
+        status (:status resp)]
+    (if (contains? [400 401 403 404] status)
+      (throw (Exception. resp))
+      (get-body resp))))
