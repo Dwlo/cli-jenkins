@@ -33,6 +33,11 @@
   (->> (list-queued-tasks)
        (filter #(tcore/before? (:since %) (-> mins tcore/minutes tcore/ago)))))
 
+(defn delete-project
+  "Deletes a project with a given url"
+  [url]
+  (rest/rest-post (str url "/doDelete")))
+
 (defn delete-builds
   [project build-numbers]
   (->> build-numbers
