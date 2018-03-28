@@ -2,7 +2,8 @@
 
 (defrecord Job [name display-name url color health-report upstream-projects downstream-projects
                 concurrent-build buildable next-build-number last-build last-completed-build last-failed-build
-                last-stable-build last-unstable-build last-successful-build last-unsuccessful-build ])
+                last-stable-build last-unstable-build last-successful-build last-unsuccessful-build
+                builds])
 
 (defn get-name [json]
   (:name json))
@@ -55,6 +56,10 @@
 (defn get-last-unsuccessful-build [json]
   (get-in json [:lastUnsuccessfulBuild :number]))
 
+(defn get-builds [json]
+  (->> (get-in json [:builds])
+       (map :url)))
+
 
 (def select-values (juxt get-name
                          get-display-name
@@ -72,7 +77,8 @@
                          get-last-stable-build
                          get-last-unstable-build
                          get-last-successful-build
-                         get-last-unsuccessful-build))
+                         get-last-unsuccessful-build
+                         get-builds))
 
 (defn parse [json]
   (->> json

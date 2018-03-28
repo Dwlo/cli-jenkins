@@ -16,7 +16,21 @@
 (defn delete-builds
   [project build-numbers]
   (->> build-numbers
-       (pmap #(rest/rest-post (str "job/" project "/" % "/doDelete")))))
+       (pmap #(try
+                (rest/rest-post (str "job/" project "/" % "/doDelete"))
+                (catch Exception ex
+                  (.getMessage ex))))))
+
+(defn cleanup-old-builds
+  "Deletes old builds except the last 'builds-to-keep'"
+  [project-url number-of-builds-to-keep]
+  (let [project           (get-project project-url)
+        last-build-number (:last-build project)]
+    (->> (range 1 (+ 1 (- last-build-number number-of-builds-to-keep)))
+         (pmap #(try
+                  (rest/rest-post (str "job/" (:name project) "/" % "/doDelete"))
+                  (catch Exception ex
+                    (.getMessage ex)))))))
 
 ;; Queue related functions
 
@@ -85,6 +99,15 @@
        (map #(clojure.string/replace (:url %)
                                      #"/[0-9]*/api/json$"
                                      "/api/json"))))
+
+(defn list-old-builds-per-project
+  "List the projects and their old not discarded builds"
+  []
+  (->> (list-projects)
+       (pmap #(let [prj (get-project (:url %))]
+                {:url (:url prj)
+                 :builds-count (count (:builds prj))}))
+       (sort-by :builds-count )))
 
 ;; Build related functions
 
